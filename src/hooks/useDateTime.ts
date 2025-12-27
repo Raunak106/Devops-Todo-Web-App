@@ -13,6 +13,6 @@ export const useDateTime = () => {
 
     return () => clearInterval(interval);
   }, []);
-//Returns the value
+//Returns the value.
   return { greeting, ...dateTime };
 };
