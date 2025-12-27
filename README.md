@@ -107,7 +107,8 @@ The generated dist folder can be deployed directly to Cloudflare Pages.
 ![WhatsApp Image 2025-12-26 at 12 26 11 (1)](https://github.com/user-attachments/assets/1c60342d-8fd6-4a94-922b-0c7780daeec0)
 
 
-🎓 SCREENSHOTS
+🎓 SCREENSHOTS OF THE CONFLICT RESOLVED
+<img width="1145" height="249" alt="Screenshot 2025-12-26 122039" src="https://github.com/user-attachments/assets/6829a029-7f98-4a66-bfea-d03eb1e0bf79" />
 
 
 🎓 Academic & Learning Value
