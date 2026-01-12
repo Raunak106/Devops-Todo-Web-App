@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { getTimeGreeting, getCurrentDateTime } from "@/lib/tasks";
+import { getTimeGreeting, getCurrentDateTime } from "@/lib/dateUtils";
 
 export const useDateTime = () => {
   const [greeting, setGreeting] = useState(getTimeGreeting());
@@ -13,6 +13,6 @@ export const useDateTime = () => {
 
     return () => clearInterval(interval);
   }, []);
-//Returns the value.
+
   return { greeting, ...dateTime };
 };

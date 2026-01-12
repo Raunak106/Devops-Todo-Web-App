@@ -3,6 +3,7 @@ import { Priority } from "@/types/task";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import {
   Select,
   SelectContent,
@@ -10,17 +11,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus } from "lucide-react";
+import { Plus, Bell } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface AddTaskFormProps {
-  onAdd: (title: string, priority: Priority, dueDate: string | null) => void;
+  onAdd: (title: string, priority: Priority, dueDate: string | null, reminderEnabled?: boolean) => void;
 }
 
 const AddTaskForm = ({ onAdd }: AddTaskFormProps) => {
   const [title, setTitle] = useState("");
   const [priority, setPriority] = useState<Priority>("medium");
   const [dueDate, setDueDate] = useState("");
+  const [reminderEnabled, setReminderEnabled] = useState(false);
   const { toast } = useToast();
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -35,14 +37,17 @@ const AddTaskForm = ({ onAdd }: AddTaskFormProps) => {
       return;
     }
 
-    onAdd(title.trim(), priority, dueDate || null);
+    onAdd(title.trim(), priority, dueDate || null, reminderEnabled);
     setTitle("");
     setPriority("medium");
     setDueDate("");
+    setReminderEnabled(false);
 
     toast({
       title: "Task added",
-      description: "Your new task has been created",
+      description: reminderEnabled 
+        ? "Your new task has been created with hourly email reminders" 
+        : "Your new task has been created",
     });
   };
 
@@ -110,6 +115,20 @@ const AddTaskForm = ({ onAdd }: AddTaskFormProps) => {
             <Plus className="h-5 w-5" />
           </Button>
         </div>
+      </div>
+
+      <div className="flex items-center justify-between pt-2 border-t border-border/50">
+        <div className="flex items-center gap-2">
+          <Bell className="h-4 w-4 text-muted-foreground" />
+          <Label htmlFor="reminder" className="text-sm text-muted-foreground cursor-pointer">
+            Email reminder every hour until completed
+          </Label>
+        </div>
+        <Switch
+          id="reminder"
+          checked={reminderEnabled}
+          onCheckedChange={setReminderEnabled}
+        />
       </div>
     </form>
   );
