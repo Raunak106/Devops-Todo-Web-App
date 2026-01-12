@@ -11,7 +11,7 @@ import GroupedTasksView from "@/components/dashboard/GroupedTasksView";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const Dashboard = () => {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, isLoading } = useAuth();
   const navigate = useNavigate();
   const {
     tasks,
@@ -24,13 +24,22 @@ const Dashboard = () => {
     clearCompleted,
     stats,
     groupedTasks,
+    loading: tasksLoading,
   } = useTasks();
 
   useEffect(() => {
-    if (!isAuthenticated) {
+    if (!isLoading && !isAuthenticated) {
       navigate("/login");
     }
-  }, [isAuthenticated, navigate]);
+  }, [isAuthenticated, isLoading, navigate]);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen animated-gradient-bg flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+      </div>
+    );
+  }
 
   if (!isAuthenticated) return null;
 
@@ -58,21 +67,33 @@ const Dashboard = () => {
                 onClearCompleted={clearCompleted}
                 hasCompleted={stats.completed > 0}
               />
-              <TaskList
-                tasks={tasks}
-                onToggle={toggleComplete}
-                onUpdate={updateTask}
-                onDelete={deleteTask}
-              />
+              {tasksLoading ? (
+                <div className="flex justify-center py-8">
+                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary" />
+                </div>
+              ) : (
+                <TaskList
+                  tasks={tasks}
+                  onToggle={toggleComplete}
+                  onUpdate={updateTask}
+                  onDelete={deleteTask}
+                />
+              )}
             </TabsContent>
 
             <TabsContent value="grouped">
-              <GroupedTasksView
-                groupedTasks={groupedTasks}
-                onToggle={toggleComplete}
-                onUpdate={updateTask}
-                onDelete={deleteTask}
-              />
+              {tasksLoading ? (
+                <div className="flex justify-center py-8">
+                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary" />
+                </div>
+              ) : (
+                <GroupedTasksView
+                  groupedTasks={groupedTasks}
+                  onToggle={toggleComplete}
+                  onUpdate={updateTask}
+                  onDelete={deleteTask}
+                />
+              )}
             </TabsContent>
           </Tabs>
         </div>

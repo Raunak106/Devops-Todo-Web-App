@@ -1,14 +1,19 @@
+import { Session } from "@supabase/supabase-js";
+
 export interface User {
   id: string;
   name: string;
   email: string;
-  password: string;
+  phone?: string;
 }
 
 export interface AuthContextType {
-  user: Omit<User, "password"> | null;
+  user: User | null;
+  session: Session | null;
   isAuthenticated: boolean;
-  login: (email: string, password: string) => { success: boolean; error?: string };
-  signup: (name: string, email: string, password: string) => { success: boolean; error?: string };
-  logout: () => void;
+  isLoading: boolean;
+  login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
+  loginWithPhone: (phone: string, password: string) => Promise<{ success: boolean; error?: string }>;
+  signup: (name: string, email: string, password: string, phone?: string) => Promise<{ success: boolean; error?: string }>;
+  logout: () => Promise<void>;
 }
