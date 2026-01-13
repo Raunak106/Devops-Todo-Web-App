@@ -44,19 +44,23 @@ const AddTaskForm = ({ onAdd }: AddTaskFormProps) => {
 
   return (
     <>
-      <form onSubmit={handleSubmit} className="glass-card p-5 space-y-4 animate-fade-in">
-        <div className="flex items-center gap-3 mb-2">
-          <div className="p-2 bg-gradient-to-r from-primary to-secondary rounded-lg">
+      <form onSubmit={handleSubmit} className="glass-card p-6 space-y-5 animate-fade-in relative overflow-hidden">
+        {/* Decorative gradient */}
+        <div className="absolute top-0 right-0 w-40 h-40 bg-gradient-to-bl from-primary/10 via-secondary/5 to-transparent rounded-bl-full" />
+        <div className="absolute bottom-0 left-0 w-32 h-32 bg-gradient-to-tr from-accent/10 to-transparent rounded-tr-full" />
+        
+        <div className="flex items-center gap-3 mb-2 relative z-10">
+          <div className="p-3 bg-gradient-to-r from-primary to-secondary rounded-xl shadow-lg shadow-primary/30 animate-pulse-glow">
             <Plus className="h-5 w-5 text-white" />
           </div>
           <div>
-            <h3 className="font-semibold text-foreground">Add New Task</h3>
-            <p className="text-xs text-muted-foreground">Create a task and set reminders</p>
+            <h3 className="font-bold text-lg text-foreground">Add New Task</h3>
+            <p className="text-sm text-muted-foreground">Create a task and set smart reminders</p>
           </div>
-          <Sparkles className="h-4 w-4 text-warning ml-auto animate-pulse" />
+          <Sparkles className="h-5 w-5 text-warning ml-auto animate-bounce-subtle" />
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-3">
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-4 relative z-10">
           <div className="md:col-span-5">
             <Label htmlFor="title" className="sr-only">Task Title</Label>
             <Input
@@ -64,14 +68,14 @@ const AddTaskForm = ({ onAdd }: AddTaskFormProps) => {
               placeholder="What needs to be done?"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="h-12 text-base border-2 focus:border-primary transition-colors"
+              className="h-13 text-base border-2 focus:border-primary focus:shadow-lg focus:shadow-primary/10 transition-all duration-300"
             />
           </div>
 
           <div className="md:col-span-3">
             <Label htmlFor="priority" className="sr-only">Priority</Label>
             <Select value={priority} onValueChange={(v) => setPriority(v as Priority)}>
-              <SelectTrigger className="h-12 border-2">
+              <SelectTrigger className="h-13 border-2 transition-all duration-300 hover:border-primary/50">
                 <SelectValue placeholder="Priority" />
               </SelectTrigger>
               <SelectContent>
@@ -104,7 +108,7 @@ const AddTaskForm = ({ onAdd }: AddTaskFormProps) => {
               type="date"
               value={dueDate}
               onChange={(e) => setDueDate(e.target.value)}
-              className="h-12 border-2"
+              className="h-13 border-2 transition-all duration-300 hover:border-primary/50"
               min={new Date().toISOString().split("T")[0]}
             />
           </div>
@@ -113,10 +117,10 @@ const AddTaskForm = ({ onAdd }: AddTaskFormProps) => {
             <Button 
               type="submit" 
               size="lg" 
-              className="w-full h-12 bg-gradient-to-r from-primary to-secondary hover:opacity-90 transition-opacity shadow-lg shadow-primary/30"
+              className="w-full h-13 bg-gradient-to-r from-primary via-secondary to-accent hover:opacity-90 transition-all duration-300 shadow-lg shadow-primary/30 btn-shine disabled:opacity-50"
               disabled={!title.trim()}
             >
-              <Plus className="h-5 w-5" />
+              <Plus className="h-6 w-6" />
             </Button>
           </div>
         </div>
