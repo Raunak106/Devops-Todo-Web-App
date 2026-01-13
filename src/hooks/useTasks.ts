@@ -52,6 +52,7 @@ export const useTasks = () => {
         completedAt: t.completed ? t.updated_at : null,
         userId: t.user_id,
         reminderEnabled: t.reminder_enabled,
+        reminderInterval: t.reminder_interval,
         lastReminderSent: t.last_reminder_sent,
       }));
 
@@ -73,8 +74,10 @@ export const useTasks = () => {
   }, [fetchTasks]);
 
   const addTask = useCallback(
-    async (title: string, priority: Priority, dueDate: string | null, reminderEnabled: boolean = false) => {
+    async (title: string, priority: Priority, dueDate: string | null, reminderInterval: number | null = null) => {
       if (!session?.user?.id) return;
+
+      const reminderEnabled = reminderInterval !== null && reminderInterval > 0;
 
       try {
         const { data, error } = await supabase
@@ -85,6 +88,7 @@ export const useTasks = () => {
             due_date: dueDate,
             user_id: session.user.id,
             reminder_enabled: reminderEnabled,
+            reminder_interval: reminderInterval,
           })
           .select()
           .single();
@@ -102,10 +106,18 @@ export const useTasks = () => {
           completedAt: null,
           userId: data.user_id,
           reminderEnabled: data.reminder_enabled,
+          reminderInterval: data.reminder_interval,
           lastReminderSent: data.last_reminder_sent,
         };
 
         setTasks((prev) => [newTask, ...prev]);
+
+        toast({
+          title: "Task added! ✨",
+          description: reminderEnabled 
+            ? `You'll receive email reminders every ${formatReminderInterval(reminderInterval)}`
+            : "Your new task has been created",
+        });
       } catch (error: any) {
         console.error("Error adding task:", error);
         toast({
@@ -117,6 +129,14 @@ export const useTasks = () => {
     },
     [session?.user?.id, toast]
   );
+
+  const formatReminderInterval = (minutes: number | null): string => {
+    if (!minutes) return "";
+    if (minutes < 60) return `${minutes} minute${minutes > 1 ? "s" : ""}`;
+    if (minutes === 60) return "hour";
+    if (minutes < 1440) return `${minutes / 60} hours`;
+    return "day";
+  };
 
   const updateTask = useCallback(
     async (id: string, updates: Partial<Pick<Task, "title" | "priority" | "dueDate" | "reminderEnabled">>) => {

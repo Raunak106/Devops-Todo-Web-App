@@ -54,6 +54,7 @@ export type Database = {
           last_reminder_sent: string | null
           priority: string
           reminder_enabled: boolean
+          reminder_interval: number | null
           title: string
           updated_at: string
           user_id: string
@@ -67,6 +68,7 @@ export type Database = {
           last_reminder_sent?: string | null
           priority?: string
           reminder_enabled?: boolean
+          reminder_interval?: number | null
           title: string
           updated_at?: string
           user_id: string
@@ -80,6 +82,7 @@ export type Database = {
           last_reminder_sent?: string | null
           priority?: string
           reminder_enabled?: boolean
+          reminder_interval?: number | null
           title?: string
           updated_at?: string
           user_id?: string

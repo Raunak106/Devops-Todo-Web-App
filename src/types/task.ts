@@ -11,6 +11,7 @@ export interface Task {
   completedAt: string | null;
   userId: string;
   reminderEnabled: boolean;
+  reminderInterval: number | null; // in minutes, null means no reminder
   lastReminderSent: string | null;
 }
 
