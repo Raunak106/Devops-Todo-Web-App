@@ -5,7 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { Mail, Lock, User, UserPlus, Phone, Sparkles, Rocket } from "lucide-react";
+import { Mail, Lock, User, UserPlus, Phone, Sparkles, Rocket, AlertCircle, CheckCircle2 } from "lucide-react";
+import { signupSchema, SignupFormData } from "@/lib/emailValidation";
 
 const Signup = () => {
   const [name, setName] = useState("");
@@ -14,6 +15,8 @@ const Signup = () => {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [touched, setTouched] = useState<Record<string, boolean>>({});
   const { signup, isAuthenticated, isLoading } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -23,38 +26,75 @@ const Signup = () => {
     return null;
   }
 
+  const validateField = (field: string, value: string) => {
+    const formData = { name, email, phone, password, confirmPassword, [field]: value };
+    const result = signupSchema.safeParse(formData);
+    
+    if (!result.success) {
+      const fieldError = result.error.errors.find(e => e.path[0] === field);
+      if (fieldError) {
+        setErrors(prev => ({ ...prev, [field]: fieldError.message }));
+      } else {
+        setErrors(prev => {
+          const { [field]: _, ...rest } = prev;
+          return rest;
+        });
+      }
+    } else {
+      setErrors(prev => {
+        const { [field]: _, ...rest } = prev;
+        return rest;
+      });
+    }
+  };
+
+  const handleBlur = (field: string) => {
+    setTouched(prev => ({ ...prev, [field]: true }));
+    validateField(field, field === 'name' ? name : field === 'email' ? email : field === 'phone' ? phone : field === 'password' ? password : confirmPassword);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
-    if (!name || !email || !password || !confirmPassword) {
-      toast({ title: "Error", description: "Please fill in all required fields", variant: "destructive" });
+    // Validate all fields
+    const formData: SignupFormData = { name, email, phone: phone || undefined, password, confirmPassword };
+    const result = signupSchema.safeParse(formData);
+
+    if (!result.success) {
+      const newErrors: Record<string, string> = {};
+      result.error.errors.forEach(err => {
+        if (err.path[0]) {
+          newErrors[err.path[0] as string] = err.message;
+        }
+      });
+      setErrors(newErrors);
+      setTouched({ name: true, email: true, phone: true, password: true, confirmPassword: true });
+      toast({ 
+        title: "Validation Error", 
+        description: result.error.errors[0]?.message || "Please fix the errors below", 
+        variant: "destructive" 
+      });
       setLoading(false);
       return;
     }
 
-    if (password !== confirmPassword) {
-      toast({ title: "Error", description: "Passwords do not match", variant: "destructive" });
-      setLoading(false);
-      return;
-    }
+    const signupResult = await signup(name, email, password, phone || undefined);
 
-    if (password.length < 6) {
-      toast({ title: "Error", description: "Password must be at least 6 characters", variant: "destructive" });
-      setLoading(false);
-      return;
-    }
-
-    const result = await signup(name, email, password, phone || undefined);
-
-    if (result.success) {
+    if (signupResult.success) {
       toast({ title: "Account created! 🎉", description: "Welcome to TaskFlow" });
       navigate("/dashboard");
     } else {
-      toast({ title: "Signup failed", description: result.error, variant: "destructive" });
+      toast({ title: "Signup failed", description: signupResult.error, variant: "destructive" });
     }
 
     setLoading(false);
+  };
+
+  const getFieldStatus = (field: string) => {
+    if (!touched[field]) return 'idle';
+    if (errors[field]) return 'error';
+    return 'success';
   };
 
   if (isLoading) {
@@ -83,44 +123,130 @@ const Signup = () => {
 
         <form onSubmit={handleSubmit} className="space-y-4 relative z-10">
           <div className="space-y-2">
-            <Label htmlFor="name">Full Name *</Label>
+            <Label htmlFor="name" className="flex items-center gap-2">
+              Full Name *
+              {getFieldStatus('name') === 'success' && <CheckCircle2 className="h-4 w-4 text-green-500" />}
+            </Label>
             <div className="relative group">
-              <User className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground group-focus-within:text-primary transition-colors" />
-              <Input id="name" placeholder="John Doe" value={name} onChange={(e) => setName(e.target.value)} className="pl-11 h-12 border-2 focus:border-primary transition-all" />
+              <User className={`absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 transition-colors ${getFieldStatus('name') === 'error' ? 'text-destructive' : 'text-muted-foreground group-focus-within:text-primary'}`} />
+              <Input 
+                id="name" 
+                placeholder="John Doe" 
+                value={name} 
+                onChange={(e) => { setName(e.target.value); if (touched.name) validateField('name', e.target.value); }}
+                onBlur={() => handleBlur('name')}
+                className={`pl-11 h-12 border-2 transition-all ${getFieldStatus('name') === 'error' ? 'border-destructive focus:border-destructive' : 'focus:border-primary'}`} 
+              />
             </div>
+            {touched.name && errors.name && (
+              <p className="text-sm text-destructive flex items-center gap-1 animate-in slide-in-from-top-1">
+                <AlertCircle className="h-3 w-3" /> {errors.name}
+              </p>
+            )}
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="email">Email *</Label>
+            <Label htmlFor="email" className="flex items-center gap-2">
+              Email *
+              {getFieldStatus('email') === 'success' && <CheckCircle2 className="h-4 w-4 text-green-500" />}
+            </Label>
             <div className="relative group">
-              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground group-focus-within:text-primary transition-colors" />
-              <Input id="email" type="email" placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)} className="pl-11 h-12 border-2 focus:border-primary transition-all" />
+              <Mail className={`absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 transition-colors ${getFieldStatus('email') === 'error' ? 'text-destructive' : 'text-muted-foreground group-focus-within:text-primary'}`} />
+              <Input 
+                id="email" 
+                type="email" 
+                placeholder="you@example.com" 
+                value={email} 
+                onChange={(e) => { setEmail(e.target.value); if (touched.email) validateField('email', e.target.value); }}
+                onBlur={() => handleBlur('email')}
+                className={`pl-11 h-12 border-2 transition-all ${getFieldStatus('email') === 'error' ? 'border-destructive focus:border-destructive' : 'focus:border-primary'}`} 
+              />
             </div>
+            {touched.email && errors.email && (
+              <p className="text-sm text-destructive flex items-center gap-1 animate-in slide-in-from-top-1">
+                <AlertCircle className="h-3 w-3" /> {errors.email}
+              </p>
+            )}
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="phone">Phone (optional)</Label>
+            <Label htmlFor="phone" className="flex items-center gap-2">
+              Phone (optional)
+              {phone && getFieldStatus('phone') === 'success' && <CheckCircle2 className="h-4 w-4 text-green-500" />}
+            </Label>
             <div className="relative group">
-              <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground group-focus-within:text-primary transition-colors" />
-              <Input id="phone" type="tel" placeholder="+1234567890" value={phone} onChange={(e) => setPhone(e.target.value)} className="pl-11 h-12 border-2 focus:border-primary transition-all" />
+              <Phone className={`absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 transition-colors ${getFieldStatus('phone') === 'error' ? 'text-destructive' : 'text-muted-foreground group-focus-within:text-primary'}`} />
+              <Input 
+                id="phone" 
+                type="tel" 
+                placeholder="+1234567890" 
+                value={phone} 
+                onChange={(e) => { setPhone(e.target.value); if (touched.phone) validateField('phone', e.target.value); }}
+                onBlur={() => handleBlur('phone')}
+                className={`pl-11 h-12 border-2 transition-all ${getFieldStatus('phone') === 'error' ? 'border-destructive focus:border-destructive' : 'focus:border-primary'}`} 
+              />
             </div>
+            {touched.phone && errors.phone && (
+              <p className="text-sm text-destructive flex items-center gap-1 animate-in slide-in-from-top-1">
+                <AlertCircle className="h-3 w-3" /> {errors.phone}
+              </p>
+            )}
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-2">
-              <Label htmlFor="password">Password *</Label>
+              <Label htmlFor="password" className="flex items-center gap-2">
+                Password *
+                {getFieldStatus('password') === 'success' && <CheckCircle2 className="h-4 w-4 text-green-500" />}
+              </Label>
               <div className="relative group">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground group-focus-within:text-primary transition-colors" />
-                <Input id="password" type="password" placeholder="••••••" value={password} onChange={(e) => setPassword(e.target.value)} className="pl-11 h-12 border-2 focus:border-primary transition-all" />
+                <Lock className={`absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 transition-colors ${getFieldStatus('password') === 'error' ? 'text-destructive' : 'text-muted-foreground group-focus-within:text-primary'}`} />
+                <Input 
+                  id="password" 
+                  type="password" 
+                  placeholder="••••••" 
+                  value={password} 
+                  onChange={(e) => { setPassword(e.target.value); if (touched.password) validateField('password', e.target.value); }}
+                  onBlur={() => handleBlur('password')}
+                  className={`pl-11 h-12 border-2 transition-all ${getFieldStatus('password') === 'error' ? 'border-destructive focus:border-destructive' : 'focus:border-primary'}`} 
+                />
               </div>
+              {touched.password && errors.password && (
+                <p className="text-sm text-destructive flex items-center gap-1 animate-in slide-in-from-top-1">
+                  <AlertCircle className="h-3 w-3" /> {errors.password}
+                </p>
+              )}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="confirmPassword">Confirm *</Label>
+              <Label htmlFor="confirmPassword" className="flex items-center gap-2">
+                Confirm *
+                {getFieldStatus('confirmPassword') === 'success' && <CheckCircle2 className="h-4 w-4 text-green-500" />}
+              </Label>
               <div className="relative group">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground group-focus-within:text-primary transition-colors" />
-                <Input id="confirmPassword" type="password" placeholder="••••••" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} className="pl-11 h-12 border-2 focus:border-primary transition-all" />
+                <Lock className={`absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 transition-colors ${getFieldStatus('confirmPassword') === 'error' ? 'text-destructive' : 'text-muted-foreground group-focus-within:text-primary'}`} />
+                <Input 
+                  id="confirmPassword" 
+                  type="password" 
+                  placeholder="••••••" 
+                  value={confirmPassword} 
+                  onChange={(e) => { setConfirmPassword(e.target.value); if (touched.confirmPassword) validateField('confirmPassword', e.target.value); }}
+                  onBlur={() => handleBlur('confirmPassword')}
+                  className={`pl-11 h-12 border-2 transition-all ${getFieldStatus('confirmPassword') === 'error' ? 'border-destructive focus:border-destructive' : 'focus:border-primary'}`} 
+                />
               </div>
+              {touched.confirmPassword && errors.confirmPassword && (
+                <p className="text-sm text-destructive flex items-center gap-1 animate-in slide-in-from-top-1">
+                  <AlertCircle className="h-3 w-3" /> {errors.confirmPassword}
+                </p>
+              )}
             </div>
+          </div>
+
+          {/* Password requirements hint */}
+          <div className="p-3 bg-muted/50 rounded-lg border border-border/50">
+            <p className="text-xs text-muted-foreground">
+              Password must be at least 6 characters with at least one letter and one number.
+            </p>
           </div>
 
           <Button type="submit" className="w-full h-12 text-base bg-gradient-to-r from-primary via-secondary to-accent hover:opacity-90 shadow-lg shadow-primary/30 btn-shine" disabled={loading}>
